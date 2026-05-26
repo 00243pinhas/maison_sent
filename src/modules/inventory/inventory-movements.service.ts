@@ -15,6 +15,8 @@ export interface CreateMovementData {
   referenceNumber: string | null;
   performedBy: string;
   notes: string | null;
+  unitCostPrice: number | null;
+  unitSellingPrice: number | null;
 }
 
 @Injectable()
@@ -28,7 +30,10 @@ export class InventoryMovementsService {
    * Internal: inserts the movement row inside an existing transaction.
    * Callers must pass the transaction's EntityManager.
    */
-  async create(data: CreateMovementData, manager: EntityManager): Promise<InventoryMovement> {
+  async create(
+    data: CreateMovementData,
+    manager: EntityManager,
+  ): Promise<InventoryMovement> {
     const movement = manager.getRepository(InventoryMovement).create(data);
     const saved = await manager.getRepository(InventoryMovement).save(movement);
 
@@ -46,7 +51,9 @@ export class InventoryMovementsService {
     return movement;
   }
 
-  async findAll(query: MovementQueryDto): Promise<PaginatedResponse<InventoryMovement>> {
+  async findAll(
+    query: MovementQueryDto,
+  ): Promise<PaginatedResponse<InventoryMovement>> {
     const qb = this.repo
       .createQueryBuilder('m')
       .leftJoinAndSelect('m.product', 'product')
@@ -67,10 +74,14 @@ export class InventoryMovementsService {
       );
     }
     if (query.movementType) {
-      qb.andWhere('m.movementType = :movementType', { movementType: query.movementType });
+      qb.andWhere('m.movementType = :movementType', {
+        movementType: query.movementType,
+      });
     }
     if (query.performedBy) {
-      qb.andWhere('m.performedBy = :performedBy', { performedBy: query.performedBy });
+      qb.andWhere('m.performedBy = :performedBy', {
+        performedBy: query.performedBy,
+      });
     }
     if (query.referenceNumber) {
       qb.andWhere('m.referenceNumber = :referenceNumber', {

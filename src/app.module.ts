@@ -7,6 +7,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { TransfersModule } from './modules/transfers/transfers.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { ProductsModule } from './modules/products/products.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
@@ -41,6 +43,8 @@ import { SeederModule } from './database/seeders/seeder.module';
     CategoriesModule,
     ProductsModule,
     InventoryModule,
+    TransfersModule,
+    ReportsModule,
     SeederModule,
   ],
 })

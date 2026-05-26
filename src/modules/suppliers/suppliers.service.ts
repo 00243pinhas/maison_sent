@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
@@ -17,12 +21,17 @@ export class SuppliersService {
   async create(dto: CreateSupplierDto): Promise<Supplier> {
     if (dto.email) {
       const exists = await this.repo.findOne({ where: { email: dto.email } });
-      if (exists) throw new ConflictException(`Supplier with email "${dto.email}" already exists`);
+      if (exists)
+        throw new ConflictException(
+          `Supplier with email "${dto.email}" already exists`,
+        );
     }
     return this.repo.save(this.repo.create(dto));
   }
 
-  async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<Supplier>> {
+  async findAll(
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Supplier>> {
     const [data, total] = await this.repo.findAndCount({
       order: { name: 'ASC' },
       skip: query.skip,
@@ -41,10 +50,15 @@ export class SuppliersService {
     const supplier = await this.findOne(id);
     if (dto.email && dto.email !== supplier.email) {
       const exists = await this.repo.findOne({ where: { email: dto.email } });
-      if (exists) throw new ConflictException(`Supplier with email "${dto.email}" already exists`);
+      if (exists)
+        throw new ConflictException(
+          `Supplier with email "${dto.email}" already exists`,
+        );
     }
     const patch = Object.fromEntries(
-      Object.entries(dto as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      Object.entries(dto as Record<string, unknown>).filter(
+        ([, v]) => v !== undefined,
+      ),
     );
     Object.assign(supplier, patch);
     return this.repo.save(supplier);

@@ -49,7 +49,9 @@ export class LocationsController {
   @Get()
   @ApiOperation({ summary: 'List all locations (paginated)' })
   @ApiOkResponse({ description: 'Paginated location list' })
-  findAll(@Query() query: PaginationQueryDto): Promise<PaginatedResponse<Location>> {
+  findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Location>> {
     return this.locationsService.findAll(query);
   }
 

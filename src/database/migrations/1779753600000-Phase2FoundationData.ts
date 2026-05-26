@@ -104,7 +104,9 @@ export class Phase2FoundationData1779753600000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_users_location"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP CONSTRAINT "FK_users_location"`,
+    );
     await queryRunner.query(`DROP INDEX "IDX_products_barcode_partial"`);
     await queryRunner.query(`DROP TABLE "products"`);
     await queryRunner.query(`DROP TYPE "product_status_enum"`);

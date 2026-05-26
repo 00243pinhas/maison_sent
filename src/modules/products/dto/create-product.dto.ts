@@ -51,7 +51,11 @@ export class CreateProductDto {
   @Min(0)
   sellingPrice: number;
 
-  @ApiProperty({ type: Number, minimum: 1, description: 'Volume in millilitres' })
+  @ApiProperty({
+    type: Number,
+    minimum: 1,
+    description: 'Volume in millilitres',
+  })
   @IsInt()
   @Min(1)
   sizeMl: number;

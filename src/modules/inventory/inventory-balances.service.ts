@@ -26,7 +26,9 @@ export class InventoryBalancesService {
     return repo.findOne({ where: { productId, locationId } });
   }
 
-  async findAll(query: BalanceQueryDto): Promise<PaginatedResponse<InventoryBalance>> {
+  async findAll(
+    query: BalanceQueryDto,
+  ): Promise<PaginatedResponse<InventoryBalance>> {
     const qb = this.repo
       .createQueryBuilder('b')
       .leftJoinAndSelect('b.product', 'product')
@@ -38,7 +40,9 @@ export class InventoryBalancesService {
       qb.andWhere('b.productId = :productId', { productId: query.productId });
     }
     if (query.locationId) {
-      qb.andWhere('b.locationId = :locationId', { locationId: query.locationId });
+      qb.andWhere('b.locationId = :locationId', {
+        locationId: query.locationId,
+      });
     }
     if (query.minQuantity !== undefined) {
       qb.andWhere('b.quantity >= :minQty', { minQty: query.minQuantity });
@@ -56,7 +60,9 @@ export class InventoryBalancesService {
     return PaginatedResponse.from(data, total, query);
   }
 
-  async findLowStock(query: LowStockQueryDto): Promise<PaginatedResponse<InventoryBalance>> {
+  async findLowStock(
+    query: LowStockQueryDto,
+  ): Promise<PaginatedResponse<InventoryBalance>> {
     const qb = this.repo
       .createQueryBuilder('b')
       .leftJoinAndSelect('b.product', 'product')
@@ -108,6 +114,28 @@ export class InventoryBalancesService {
     }
 
     return balance;
+  }
+
+  /**
+   * Locks an existing balance row with SELECT FOR UPDATE and returns the quantity.
+   * Returns 0 if no row exists (implicit shortage). Must be called inside a transaction.
+   * Used by TransfersService.approve to snapshot and lock balances without creating rows.
+   */
+  async getLockedQuantity(
+    productId: string,
+    locationId: string,
+    manager: EntityManager,
+  ): Promise<number> {
+    const balance = await manager
+      .getRepository(InventoryBalance)
+      .createQueryBuilder('b')
+      .setLock('pessimistic_write')
+      .where('b.productId = :productId AND b.locationId = :locationId', {
+        productId,
+        locationId,
+      })
+      .getOne();
+    return balance?.quantity ?? 0;
   }
 
   /**

@@ -58,13 +58,27 @@ export class Phase3InventoryCore1779840000000 implements MigrationInterface {
     `);
 
     // indexes on inventory_movements
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_product_id"   ON "inventory_movements" ("product_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_from_location" ON "inventory_movements" ("from_location_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_to_location"   ON "inventory_movements" ("to_location_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_type"          ON "inventory_movements" ("movement_type")`);
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_created_at"    ON "inventory_movements" ("created_at" DESC)`);
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_performed_by"  ON "inventory_movements" ("performed_by")`);
-    await queryRunner.query(`CREATE INDEX "IDX_inv_mov_product_created" ON "inventory_movements" ("product_id", "created_at" DESC)`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_product_id"   ON "inventory_movements" ("product_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_from_location" ON "inventory_movements" ("from_location_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_to_location"   ON "inventory_movements" ("to_location_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_type"          ON "inventory_movements" ("movement_type")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_created_at"    ON "inventory_movements" ("created_at" DESC)`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_performed_by"  ON "inventory_movements" ("performed_by")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_inv_mov_product_created" ON "inventory_movements" ("product_id", "created_at" DESC)`,
+    );
 
     // inventory_balances — derived cache, never source of truth
     await queryRunner.query(`

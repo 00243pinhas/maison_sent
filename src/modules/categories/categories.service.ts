@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
@@ -16,11 +20,14 @@ export class CategoriesService {
 
   async create(dto: CreateCategoryDto): Promise<Category> {
     const exists = await this.repo.findOne({ where: { name: dto.name } });
-    if (exists) throw new ConflictException(`Category "${dto.name}" already exists`);
+    if (exists)
+      throw new ConflictException(`Category "${dto.name}" already exists`);
     return this.repo.save(this.repo.create(dto));
   }
 
-  async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<Category>> {
+  async findAll(
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Category>> {
     const [data, total] = await this.repo.findAndCount({
       order: { name: 'ASC' },
       skip: query.skip,
@@ -39,10 +46,13 @@ export class CategoriesService {
     const category = await this.findOne(id);
     if (dto.name && dto.name !== category.name) {
       const exists = await this.repo.findOne({ where: { name: dto.name } });
-      if (exists) throw new ConflictException(`Category "${dto.name}" already exists`);
+      if (exists)
+        throw new ConflictException(`Category "${dto.name}" already exists`);
     }
     const patch = Object.fromEntries(
-      Object.entries(dto as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      Object.entries(dto as Record<string, unknown>).filter(
+        ([, v]) => v !== undefined,
+      ),
     );
     Object.assign(category, patch);
     return this.repo.save(category);

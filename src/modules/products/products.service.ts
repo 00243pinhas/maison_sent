@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
@@ -23,11 +27,15 @@ export class ProductsService {
     await this.suppliersService.findOne(dto.supplierId);
 
     const skuExists = await this.repo.findOne({ where: { sku: dto.sku } });
-    if (skuExists) throw new ConflictException(`SKU "${dto.sku}" already exists`);
+    if (skuExists)
+      throw new ConflictException(`SKU "${dto.sku}" already exists`);
 
     if (dto.barcode) {
-      const barcodeExists = await this.repo.findOne({ where: { barcode: dto.barcode } });
-      if (barcodeExists) throw new ConflictException(`Barcode "${dto.barcode}" already exists`);
+      const barcodeExists = await this.repo.findOne({
+        where: { barcode: dto.barcode },
+      });
+      if (barcodeExists)
+        throw new ConflictException(`Barcode "${dto.barcode}" already exists`);
     }
 
     return this.repo.save(this.repo.create(dto));
@@ -46,10 +54,14 @@ export class ProductsService {
       );
     }
     if (query.categoryId) {
-      qb.andWhere('p.category_id = :categoryId', { categoryId: query.categoryId });
+      qb.andWhere('p.category_id = :categoryId', {
+        categoryId: query.categoryId,
+      });
     }
     if (query.supplierId) {
-      qb.andWhere('p.supplier_id = :supplierId', { supplierId: query.supplierId });
+      qb.andWhere('p.supplier_id = :supplierId', {
+        supplierId: query.supplierId,
+      });
     }
     if (query.status) {
       qb.andWhere('p.status = :status', { status: query.status });
@@ -78,15 +90,21 @@ export class ProductsService {
     }
     if (dto.sku && dto.sku !== product.sku) {
       const skuExists = await this.repo.findOne({ where: { sku: dto.sku } });
-      if (skuExists) throw new ConflictException(`SKU "${dto.sku}" already exists`);
+      if (skuExists)
+        throw new ConflictException(`SKU "${dto.sku}" already exists`);
     }
     if (dto.barcode && dto.barcode !== product.barcode) {
-      const barcodeExists = await this.repo.findOne({ where: { barcode: dto.barcode } });
-      if (barcodeExists) throw new ConflictException(`Barcode "${dto.barcode}" already exists`);
+      const barcodeExists = await this.repo.findOne({
+        where: { barcode: dto.barcode },
+      });
+      if (barcodeExists)
+        throw new ConflictException(`Barcode "${dto.barcode}" already exists`);
     }
 
     const patch = Object.fromEntries(
-      Object.entries(dto as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      Object.entries(dto as Record<string, unknown>).filter(
+        ([, v]) => v !== undefined,
+      ),
     );
     Object.assign(product, patch);
     return this.repo.save(product);

@@ -49,7 +49,9 @@ export class CategoriesController {
   @Get()
   @ApiOperation({ summary: 'List all categories (paginated)' })
   @ApiOkResponse({ description: 'Paginated category list' })
-  findAll(@Query() query: PaginationQueryDto): Promise<PaginatedResponse<Category>> {
+  findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Category>> {
     return this.categoriesService.findAll(query);
   }
 
@@ -74,7 +76,9 @@ export class CategoriesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles(RoleName.SUPER_ADMIN, RoleName.ADMIN)
-  @ApiOperation({ summary: 'Soft-delete a category (blocked if active products exist)' })
+  @ApiOperation({
+    summary: 'Soft-delete a category (blocked if active products exist)',
+  })
   @ApiNoContentResponse({ description: 'Deleted' })
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.categoriesService.remove(id);

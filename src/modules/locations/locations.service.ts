@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
@@ -16,11 +20,14 @@ export class LocationsService {
 
   async create(dto: CreateLocationDto): Promise<Location> {
     const exists = await this.repo.findOne({ where: { name: dto.name } });
-    if (exists) throw new ConflictException(`Location "${dto.name}" already exists`);
+    if (exists)
+      throw new ConflictException(`Location "${dto.name}" already exists`);
     return this.repo.save(this.repo.create(dto));
   }
 
-  async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<Location>> {
+  async findAll(
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Location>> {
     const [data, total] = await this.repo.findAndCount({
       order: { name: 'ASC' },
       skip: query.skip,
@@ -39,10 +46,13 @@ export class LocationsService {
     const location = await this.findOne(id);
     if (dto.name && dto.name !== location.name) {
       const exists = await this.repo.findOne({ where: { name: dto.name } });
-      if (exists) throw new ConflictException(`Location "${dto.name}" already exists`);
+      if (exists)
+        throw new ConflictException(`Location "${dto.name}" already exists`);
     }
     const patch = Object.fromEntries(
-      Object.entries(dto as Record<string, unknown>).filter(([, v]) => v !== undefined),
+      Object.entries(dto as Record<string, unknown>).filter(
+        ([, v]) => v !== undefined,
+      ),
     );
     Object.assign(location, patch);
     return this.repo.save(location);

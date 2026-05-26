@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { MovementType } from '../../../common/enums/movement-type.enum';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
 import { Location } from '../../locations/entities/location.entity';
 import { Product } from '../../products/entities/product.entity';
 import { User } from '../../users/entities/user.entity';
@@ -49,7 +50,12 @@ export class InventoryMovement {
   @JoinColumn({ name: 'to_location_id' })
   toLocation: Location | null;
 
-  @Column({ type: 'varchar', length: 80, name: 'reference_number', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 80,
+    name: 'reference_number',
+    nullable: true,
+  })
   referenceNumber: string | null;
 
   @Index('IDX_inv_mov_performed_by')
@@ -62,6 +68,26 @@ export class InventoryMovement {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'unit_cost_price',
+    nullable: true,
+    transformer: decimalTransformer,
+  })
+  unitCostPrice: number | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'unit_selling_price',
+    nullable: true,
+    transformer: decimalTransformer,
+  })
+  unitSellingPrice: number | null;
 
   @Index('IDX_inv_mov_created_at')
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })

@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export enum AdjustDirection {
   INCREASE = 'INCREASE',
@@ -24,7 +32,10 @@ export class AdjustStockDto {
   @Min(1)
   quantity: number;
 
-  @ApiProperty({ maxLength: 80, description: 'Required audit reference for adjustments' })
+  @ApiProperty({
+    maxLength: 80,
+    description: 'Required audit reference for adjustments',
+  })
   @IsString()
   @MaxLength(80)
   referenceNumber: string;

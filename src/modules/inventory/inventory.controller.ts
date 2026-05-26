@@ -53,7 +53,9 @@ export class InventoryController {
 
   @Post('receive')
   @Roles(RoleName.SUPER_ADMIN, RoleName.ADMIN, RoleName.WAREHOUSE_MANAGER)
-  @ApiOperation({ summary: 'Receive stock into a location (RECEIVED movement)' })
+  @ApiOperation({
+    summary: 'Receive stock into a location (RECEIVED movement)',
+  })
   @ApiCreatedResponse({ description: 'Movement record' })
   receiveStock(
     @Body() dto: ReceiveStockDto,
@@ -86,7 +88,9 @@ export class InventoryController {
     RoleName.WAREHOUSE_MANAGER,
     RoleName.SALES_STAFF,
   )
-  @ApiOperation({ summary: 'Record a customer return (RETURN movement, increases stock)' })
+  @ApiOperation({
+    summary: 'Record a customer return (RETURN movement, increases stock)',
+  })
   @ApiCreatedResponse({ description: 'Movement record' })
   recordReturn(
     @Body() dto: RecordReturnDto,
@@ -102,7 +106,9 @@ export class InventoryController {
     RoleName.BRANCH_MANAGER,
     RoleName.WAREHOUSE_MANAGER,
   )
-  @ApiOperation({ summary: 'Record damaged/written-off stock (DAMAGE movement)' })
+  @ApiOperation({
+    summary: 'Record damaged/written-off stock (DAMAGE movement)',
+  })
   @ApiCreatedResponse({ description: 'Movement record' })
   recordDamage(
     @Body() dto: RecordDamageDto,
@@ -113,7 +119,10 @@ export class InventoryController {
 
   @Post('adjust')
   @Roles(RoleName.SUPER_ADMIN, RoleName.ADMIN)
-  @ApiOperation({ summary: 'Adjust stock up or down with a mandatory reference (ADJUSTMENT_IN / ADJUSTMENT_OUT)' })
+  @ApiOperation({
+    summary:
+      'Adjust stock up or down with a mandatory reference (ADJUSTMENT_IN / ADJUSTMENT_OUT)',
+  })
   @ApiCreatedResponse({ description: 'Movement record' })
   adjustStock(
     @Body() dto: AdjustStockDto,
@@ -125,7 +134,10 @@ export class InventoryController {
   // ── Movement history reads ─────────────────────────────────────────────────
 
   @Get('movements')
-  @ApiOperation({ summary: 'List movement history with optional filters (paginated, newest first)' })
+  @ApiOperation({
+    summary:
+      'List movement history with optional filters (paginated, newest first)',
+  })
   @ApiOkResponse({ description: 'Paginated movement list' })
   findAllMovements(
     @Query() query: MovementQueryDto,
@@ -145,7 +157,9 @@ export class InventoryController {
   // ── Balance reads ──────────────────────────────────────────────────────────
 
   @Get('balances')
-  @ApiOperation({ summary: 'List current stock balances with optional filters (paginated)' })
+  @ApiOperation({
+    summary: 'List current stock balances with optional filters (paginated)',
+  })
   @ApiOkResponse({ description: 'Paginated balance list' })
   findAllBalances(
     @Query() query: BalanceQueryDto,
@@ -165,7 +179,10 @@ export class InventoryController {
   @Post('balances/reconcile')
   @HttpCode(HttpStatus.OK)
   @Roles(RoleName.SUPER_ADMIN)
-  @ApiOperation({ summary: 'SUPER_ADMIN: truncate and rebuild inventory_balances from movement history' })
+  @ApiOperation({
+    summary:
+      'SUPER_ADMIN: truncate and rebuild inventory_balances from movement history',
+  })
   @ApiOkResponse({ description: 'Reconciliation result' })
   reconcileBalances(): Promise<{
     replayedMovements: number;

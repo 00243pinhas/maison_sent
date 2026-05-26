@@ -49,7 +49,9 @@ export class ProductsController {
   @Get()
   @ApiOperation({ summary: 'List products with optional filters (paginated)' })
   @ApiOkResponse({ description: 'Paginated product list' })
-  findAll(@Query() query: ProductQueryDto): Promise<PaginatedResponse<Product>> {
+  findAll(
+    @Query() query: ProductQueryDto,
+  ): Promise<PaginatedResponse<Product>> {
     return this.productsService.findAll(query);
   }
 

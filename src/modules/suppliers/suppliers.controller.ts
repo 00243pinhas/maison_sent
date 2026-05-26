@@ -49,7 +49,9 @@ export class SuppliersController {
   @Get()
   @ApiOperation({ summary: 'List all suppliers (paginated)' })
   @ApiOkResponse({ description: 'Paginated supplier list' })
-  findAll(@Query() query: PaginationQueryDto): Promise<PaginatedResponse<Supplier>> {
+  findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Supplier>> {
     return this.suppliersService.findAll(query);
   }
 
