@@ -10,6 +10,7 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { JobsModule } from './modules/jobs/jobs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
 import { RolesModule } from './modules/roles/roles.module';
@@ -49,6 +50,7 @@ import { SeederModule } from './database/seeders/seeder.module';
     TransfersModule,
     ReportsModule,
     NotificationsModule,
+    JobsModule,
     SeederModule,
   ],
 })

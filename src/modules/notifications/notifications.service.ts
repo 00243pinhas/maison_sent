@@ -1,8 +1,10 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +15,7 @@ import { UsersService } from '../users/users.service';
 import { ListNotificationsDto } from './dto/list-notifications.dto';
 import { Notification } from './entities/notification.entity';
 import { FirebaseService } from './firebase/firebase.service';
+import { JobQueueService } from '../jobs/services/job-queue.service';
 
 interface DispatchParams {
   recipientId: string;
@@ -36,6 +39,8 @@ export class NotificationsService {
     private readonly repo: Repository<Notification>,
     private readonly usersService: UsersService,
     private readonly firebaseService: FirebaseService,
+    @Inject(forwardRef(() => JobQueueService))
+    private readonly jobQueueService: JobQueueService,
   ) {}
 
   async dispatch(params: DispatchParams): Promise<void> {
@@ -67,8 +72,27 @@ export class NotificationsService {
     });
     await this.repo.save(notification);
 
-    // Fire-and-forget push — failure must never bubble up
-    this.sendPushSafe(recipientId, title, message, data).catch(() => undefined);
+    // Enqueue push delivery — DB write is synchronous, push is async via queue
+    if (this.firebaseService.isEnabled) {
+      const user = await this.usersService.findWithFcmToken(recipientId);
+      if (user?.fcmToken) {
+        await this.jobQueueService
+          .enqueueSendPush({
+            userId: recipientId,
+            token: user.fcmToken,
+            title,
+            body: message,
+            data: data ? toStringRecord(data) : undefined,
+            notificationId: notification.id,
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to enqueue push for notification ${notification.id}`,
+              err,
+            ),
+          );
+      }
+    }
   }
 
   async dispatchBulk(
@@ -175,28 +199,13 @@ export class NotificationsService {
     }
     return notification;
   }
+}
 
-  private async sendPushSafe(
-    recipientId: string,
-    title: string,
-    body: string,
-    data?: Record<string, unknown>,
-  ): Promise<void> {
-    if (!this.firebaseService.isEnabled) return;
-
-    const user = await this.usersService.findWithFcmToken(recipientId);
-    if (!user?.fcmToken) return;
-
-    try {
-      await this.firebaseService.sendPush(user.fcmToken, title, body, data);
-    } catch (err: unknown) {
-      const code = (err as { errorInfo?: { code?: string } })?.errorInfo?.code;
-      if (code === 'messaging/registration-token-not-registered') {
-        await this.usersService
-          .updateFcmToken(recipientId, null)
-          .catch(() => undefined);
-      }
-      this.logger.error(`Push failed for user ${recipientId}`, err);
-    }
-  }
+function toStringRecord(data: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [
+      k,
+      typeof v === 'string' ? v : JSON.stringify(v),
+    ]),
+  );
 }

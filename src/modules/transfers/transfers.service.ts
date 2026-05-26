@@ -471,6 +471,14 @@ export class TransfersService {
     return result;
   }
 
+  async findStalePendingApproval(olderThan: Date): Promise<Transfer[]> {
+    return this.transferRepo
+      .createQueryBuilder('t')
+      .where('t.status = :status', { status: TransferStatus.PENDING_APPROVAL })
+      .andWhere('t.createdAt < :olderThan', { olderThan })
+      .getMany();
+  }
+
   // ── private helpers ────────────────────────────────────────────────────────
 
   private assertTransition(

@@ -138,6 +138,17 @@ export class InventoryBalancesService {
     return balance?.quantity ?? 0;
   }
 
+  async findBelowProductThresholds(): Promise<InventoryBalance[]> {
+    return this.repo
+      .createQueryBuilder('b')
+      .innerJoinAndSelect('b.product', 'p')
+      .innerJoinAndSelect('b.location', 'l')
+      .where('p.lowStockThreshold IS NOT NULL')
+      .andWhere('b.quantity <= p.lowStockThreshold')
+      .andWhere('p.deletedAt IS NULL')
+      .getMany();
+  }
+
   /**
    * Applies a signed delta to a balance row that was already locked via getOrCreate.
    * Throws 409 if the result would be negative. Must be called inside a transaction.
