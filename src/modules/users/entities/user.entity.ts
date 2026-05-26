@@ -35,6 +35,15 @@ export class User {
   })
   refreshToken: string | null;
 
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    select: false,
+    name: 'fcm_token',
+  })
+  fcmToken: string | null;
+
   @Column({ type: 'uuid', name: 'role_id' })
   roleId: string;
 

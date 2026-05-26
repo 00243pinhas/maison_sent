@@ -69,6 +69,9 @@ export class Product {
   @Column({ type: 'enum', enum: ProductStatus, default: ProductStatus.ACTIVE })
   status: ProductStatus;
 
+  @Column({ type: 'integer', name: 'low_stock_threshold', nullable: true })
+  lowStockThreshold: number | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 

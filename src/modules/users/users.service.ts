@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RoleName } from '../../common/enums/role.enum';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -47,5 +48,26 @@ export class UsersService {
     hashedToken: string | null,
   ): Promise<void> {
     await this.userRepo.update(userId, { refreshToken: hashedToken });
+  }
+
+  async findUsersByRoles(roles: RoleName[]): Promise<User[]> {
+    return this.userRepo
+      .createQueryBuilder('u')
+      .innerJoinAndSelect('u.role', 'role')
+      .where('role.name IN (:...roles)', { roles })
+      .andWhere('u.deleted_at IS NULL')
+      .getMany();
+  }
+
+  async updateFcmToken(userId: string, token: string | null): Promise<void> {
+    await this.userRepo.update(userId, { fcmToken: token });
+  }
+
+  async findWithFcmToken(userId: string): Promise<User | null> {
+    return this.userRepo
+      .createQueryBuilder('u')
+      .select(['u.id', 'u.fcmToken'])
+      .where('u.id = :id', { id: userId })
+      .getOne();
   }
 }

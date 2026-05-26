@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -9,6 +10,7 @@ import { LocationsModule } from './modules/locations/locations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
@@ -20,6 +22,7 @@ import { SeederModule } from './database/seeders/seeder.module';
   providers: [AppService],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -45,6 +48,7 @@ import { SeederModule } from './database/seeders/seeder.module';
     InventoryModule,
     TransfersModule,
     ReportsModule,
+    NotificationsModule,
     SeederModule,
   ],
 })

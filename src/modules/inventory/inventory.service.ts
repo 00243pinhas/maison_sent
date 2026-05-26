@@ -3,9 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { MovementType } from '../../common/enums/movement-type.enum';
+import {
+  INVENTORY_OUTBOUND,
+  InventoryOutboundPayload,
+} from '../notifications/events/notification-events';
 import { Location } from '../locations/entities/location.entity';
 import { Product } from '../products/entities/product.entity';
 import { AdjustDirection, AdjustStockDto } from './dto/adjust-stock.dto';
@@ -27,6 +32,7 @@ export class InventoryService {
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly inventoryBalancesService: InventoryBalancesService,
     private readonly inventoryMovementsService: InventoryMovementsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async receiveStock(
@@ -71,7 +77,8 @@ export class InventoryService {
     dto: RecordSaleDto,
     performedById: string,
   ): Promise<InventoryMovement> {
-    return this.dataSource.transaction(async (manager) => {
+    let newBalance = 0;
+    const movement = await this.dataSource.transaction(async (manager) => {
       const product = await this.validateProduct(dto.productId, manager);
       await this.validateLocation(dto.fromLocationId, manager);
 
@@ -86,6 +93,13 @@ export class InventoryService {
         -dto.quantity,
         manager,
       );
+
+      const bal = await this.inventoryBalancesService.findByProductAndLocation(
+        dto.productId,
+        dto.fromLocationId,
+        manager,
+      );
+      newBalance = bal?.quantity ?? 0;
 
       return this.inventoryMovementsService.create(
         this.buildMovementData({
@@ -103,6 +117,16 @@ export class InventoryService {
         manager,
       );
     });
+
+    this.eventEmitter.emit(INVENTORY_OUTBOUND, {
+      productId: dto.productId,
+      locationId: dto.fromLocationId,
+      newBalance,
+      movementType: MovementType.SALE,
+      performedById,
+    } satisfies InventoryOutboundPayload);
+
+    return movement;
   }
 
   async recordReturn(
@@ -147,7 +171,8 @@ export class InventoryService {
     dto: RecordDamageDto,
     performedById: string,
   ): Promise<InventoryMovement> {
-    return this.dataSource.transaction(async (manager) => {
+    let newBalance = 0;
+    const movement = await this.dataSource.transaction(async (manager) => {
       const product = await this.validateProduct(dto.productId, manager);
       await this.validateLocation(dto.fromLocationId, manager);
 
@@ -162,6 +187,13 @@ export class InventoryService {
         -dto.quantity,
         manager,
       );
+
+      const bal = await this.inventoryBalancesService.findByProductAndLocation(
+        dto.productId,
+        dto.fromLocationId,
+        manager,
+      );
+      newBalance = bal?.quantity ?? 0;
 
       return this.inventoryMovementsService.create(
         this.buildMovementData({
@@ -179,6 +211,16 @@ export class InventoryService {
         manager,
       );
     });
+
+    this.eventEmitter.emit(INVENTORY_OUTBOUND, {
+      productId: dto.productId,
+      locationId: dto.fromLocationId,
+      newBalance,
+      movementType: MovementType.DAMAGE,
+      performedById,
+    } satisfies InventoryOutboundPayload);
+
+    return movement;
   }
 
   async adjustStock(
@@ -191,7 +233,8 @@ export class InventoryService {
       : MovementType.ADJUSTMENT_OUT;
     const delta = isIncrease ? dto.quantity : -dto.quantity;
 
-    return this.dataSource.transaction(async (manager) => {
+    let newBalance = 0;
+    const movement = await this.dataSource.transaction(async (manager) => {
       const product = await this.validateProduct(dto.productId, manager);
       await this.validateLocation(dto.locationId, manager);
 
@@ -206,6 +249,16 @@ export class InventoryService {
         delta,
         manager,
       );
+
+      if (!isIncrease) {
+        const bal =
+          await this.inventoryBalancesService.findByProductAndLocation(
+            dto.productId,
+            dto.locationId,
+            manager,
+          );
+        newBalance = bal?.quantity ?? 0;
+      }
 
       return this.inventoryMovementsService.create(
         this.buildMovementData({
@@ -223,6 +276,18 @@ export class InventoryService {
         manager,
       );
     });
+
+    if (!isIncrease) {
+      this.eventEmitter.emit(INVENTORY_OUTBOUND, {
+        productId: dto.productId,
+        locationId: dto.locationId,
+        newBalance,
+        movementType: MovementType.ADJUSTMENT_OUT,
+        performedById,
+      } satisfies InventoryOutboundPayload);
+    }
+
+    return movement;
   }
 
   /**
@@ -353,9 +418,42 @@ export class InventoryService {
       return movements;
     };
 
-    return externalManager
-      ? run(externalManager)
-      : this.dataSource.transaction(run);
+    if (externalManager) {
+      // Caller owns the transaction — it will emit inventory events after commit.
+      return run(externalManager);
+    }
+
+    // Standalone: collect source-side balances inside the transaction, emit after commit.
+    const outboundBalances: Array<{ productId: string; newBalance: number }> =
+      [];
+    const movements = await this.dataSource.transaction(async (manager) => {
+      const result = await run(manager);
+      for (const item of params.items) {
+        const bal =
+          await this.inventoryBalancesService.findByProductAndLocation(
+            item.productId,
+            params.fromLocationId,
+            manager,
+          );
+        outboundBalances.push({
+          productId: item.productId,
+          newBalance: bal?.quantity ?? 0,
+        });
+      }
+      return result;
+    });
+
+    for (const { productId, newBalance } of outboundBalances) {
+      this.eventEmitter.emit(INVENTORY_OUTBOUND, {
+        productId,
+        locationId: params.fromLocationId,
+        newBalance,
+        movementType: MovementType.TRANSFER,
+        performedById: params.performedById,
+      } satisfies InventoryOutboundPayload);
+    }
+
+    return movements;
   }
 
   async reconcileBalances(): Promise<{

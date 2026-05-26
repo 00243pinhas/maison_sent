@@ -4,9 +4,23 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
+import { MovementType } from '../../common/enums/movement-type.enum';
 import { RoleName } from '../../common/enums/role.enum';
+import {
+  INVENTORY_OUTBOUND,
+  InventoryOutboundPayload,
+  TRANSFER_APPROVED,
+  TRANSFER_COMPLETED,
+  TRANSFER_REJECTED,
+  TRANSFER_SUBMITTED,
+  TransferApprovedPayload,
+  TransferCompletedPayload,
+  TransferRejectedPayload,
+  TransferSubmittedPayload,
+} from '../notifications/events/notification-events';
 import {
   TRANSFER_TRANSITIONS,
   TransferStatus,
@@ -34,6 +48,7 @@ export class TransfersService {
     private readonly dataSource: DataSource,
     private readonly inventoryService: InventoryService,
     private readonly inventoryBalancesService: InventoryBalancesService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: CreateTransferDto, creatorId: string): Promise<Transfer> {
@@ -253,9 +268,18 @@ export class TransfersService {
     this.assertEditPermission(transfer, userId, userRole);
 
     transfer.status = TransferStatus.PENDING_APPROVAL;
-    // TODO Notifications: notify approvers
     await this.transferRepo.save(transfer);
-    return this.findById(id);
+    const result = await this.findById(id);
+
+    this.eventEmitter.emit(TRANSFER_SUBMITTED, {
+      transferId: id,
+      creatorId: userId,
+      fromLocationId: transfer.fromLocationId,
+      toLocationId: transfer.toLocationId,
+      referenceNumber: transfer.referenceNumber,
+    } satisfies TransferSubmittedPayload);
+
+    return result;
   }
 
   async approve(id: string, approverId: string): Promise<Transfer> {
@@ -287,12 +311,19 @@ export class TransfersService {
       transfer.status = TransferStatus.APPROVED;
       transfer.approvedBy = approverId;
       transfer.approvedAt = new Date();
-      // TODO Notifications: notify creator + destination location
 
       await manager.getRepository(Transfer).save(transfer);
     });
 
-    return this.findById(id);
+    const result = await this.findById(id);
+
+    this.eventEmitter.emit(TRANSFER_APPROVED, {
+      transferId: id,
+      creatorId: result.createdBy,
+      approverId,
+    } satisfies TransferApprovedPayload);
+
+    return result;
   }
 
   async reject(
@@ -308,10 +339,18 @@ export class TransfersService {
     // Both approve and reject are treated as approval decisions.
     transfer.approvedBy = approverId;
     transfer.approvedAt = new Date();
-    // TODO Notifications: notify creator
 
     await this.transferRepo.save(transfer);
-    return this.findById(id);
+    const result = await this.findById(id);
+
+    this.eventEmitter.emit(TRANSFER_REJECTED, {
+      transferId: id,
+      creatorId: transfer.createdBy,
+      approverId,
+      reason: dto.rejectionReason,
+    } satisfies TransferRejectedPayload);
+
+    return result;
   }
 
   async cancel(
@@ -329,6 +368,12 @@ export class TransfersService {
   }
 
   async complete(id: string, completerId: string): Promise<Transfer> {
+    // Capture data for post-commit events — populated inside the transaction.
+    let capturedCreatorId = '';
+    let capturedFromLocationId = '';
+    let capturedToLocationId = '';
+    let capturedItems: Array<{ productId: string }> = [];
+
     await this.dataSource.transaction(async (manager) => {
       // Lock the transfer header row to prevent double-completion.
       // PostgreSQL prohibits FOR UPDATE on the nullable side of an outer join,
@@ -388,12 +433,42 @@ export class TransfersService {
       transfer.status = TransferStatus.COMPLETED;
       transfer.completedBy = completerId;
       transfer.completedAt = new Date();
-      // TODO Notifications: notify creator + destination location
+
+      capturedCreatorId = transfer.createdBy;
+      capturedFromLocationId = transfer.fromLocationId;
+      capturedToLocationId = transfer.toLocationId;
+      capturedItems = transfer.items.map((i) => ({ productId: i.productId }));
 
       await manager.getRepository(Transfer).save(transfer);
     });
 
-    return this.findById(id);
+    const result = await this.findById(id);
+
+    this.eventEmitter.emit(TRANSFER_COMPLETED, {
+      transferId: id,
+      creatorId: capturedCreatorId,
+      completerId,
+      fromLocationId: capturedFromLocationId,
+      toLocationId: capturedToLocationId,
+    } satisfies TransferCompletedPayload);
+
+    // Emit inventory outbound events for each item (read committed balances).
+    for (const item of capturedItems) {
+      const balance =
+        await this.inventoryBalancesService.findByProductAndLocation(
+          item.productId,
+          capturedFromLocationId,
+        );
+      this.eventEmitter.emit(INVENTORY_OUTBOUND, {
+        productId: item.productId,
+        locationId: capturedFromLocationId,
+        newBalance: balance?.quantity ?? 0,
+        movementType: MovementType.TRANSFER,
+        performedById: completerId,
+      } satisfies InventoryOutboundPayload);
+    }
+
+    return result;
   }
 
   // ── private helpers ────────────────────────────────────────────────────────

@@ -64,4 +64,15 @@ export class CreateProductDto {
   @IsOptional()
   @IsEnum(ProductStatus)
   status?: ProductStatus;
+
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 1,
+    description:
+      'Trigger low-stock alert when balance drops to this level. Null = disabled.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  lowStockThreshold?: number;
 }
