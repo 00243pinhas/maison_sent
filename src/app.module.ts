@@ -32,7 +32,7 @@ import { SeederModule } from './database/seeders/seeder.module';
         return {
           type: 'postgres',
           ...(databaseUrl
-            ? { url: databaseUrl, ssl: { rejectUnauthorized: false } }
+            ? { url: databaseUrl, ssl: true, extra: { ssl: { rejectUnauthorized: false } } }
             : {
                 host: config.getOrThrow<string>('DATABASE_HOST'),
                 port: config.getOrThrow<number>('DATABASE_PORT'),
