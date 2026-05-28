@@ -1,9 +1,12 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Build output
 dist/
 build/
+**/dist/
+**/build/
 
 # Environment & secrets — NEVER commit these
 .env
@@ -11,9 +14,13 @@ build/
 !.env.example
 
 # Logs
+logs
 *.log
 npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
 # Editor / OS
 .vscode/
@@ -22,6 +29,21 @@ yarn-error.log*
 
 # Test / coverage
 coverage/
+.nyc_output/
 
-# Misc
+# Temp
+.temp
+.tmp
 *.local
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Nested git repo (backend is tracked at root level)
+backend/
