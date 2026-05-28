@@ -22,7 +22,8 @@
     "typeorm:cli": "typeorm-ts-node-commonjs",
     "migration:run": "npm run typeorm:cli -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm:cli -- migration:revert -d src/database/data-source.ts",
-    "migration:generate": "npm run typeorm:cli -- migration:generate -d src/database/data-source.ts"
+    "migration:generate": "npm run typeorm:cli -- migration:generate -d src/database/data-source.ts",
+    "migration:run:prod": "NODE_ENV=production node -e \"const {AppDataSource}=require('./dist/database/data-source');AppDataSource.initialize().then(ds=>ds.runMigrations({transaction:'all'})).then(r=>{console.log('Migrations applied:',r.length);process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})\""
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",

@@ -27,16 +27,23 @@ import { SeederModule } from './database/seeders/seeder.module';
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.getOrThrow<string>('DATABASE_HOST'),
-        port: config.getOrThrow<number>('DATABASE_PORT'),
-        username: config.getOrThrow<string>('DATABASE_USER'),
-        password: config.getOrThrow<string>('DATABASE_PASSWORD'),
-        database: config.getOrThrow<string>('DATABASE_NAME'),
-        autoLoadEntities: true,
-        synchronize: false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>('DATABASE_URL');
+        return {
+          type: 'postgres',
+          ...(databaseUrl
+            ? { url: databaseUrl, ssl: { rejectUnauthorized: false } }
+            : {
+                host: config.getOrThrow<string>('DATABASE_HOST'),
+                port: config.getOrThrow<number>('DATABASE_PORT'),
+                username: config.getOrThrow<string>('DATABASE_USER'),
+                password: config.getOrThrow<string>('DATABASE_PASSWORD'),
+                database: config.getOrThrow<string>('DATABASE_NAME'),
+              }),
+          autoLoadEntities: true,
+          synchronize: false,
+        };
+      },
     }),
 
     AuthModule,

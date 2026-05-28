@@ -27,25 +27,45 @@ import { ScheduledTasksService } from './services/scheduled-tasks.service';
   imports: [
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.getOrThrow<string>('REDIS_HOST'),
-          port: config.get<number>('REDIS_PORT', 6379),
-          password: config.get<string>('REDIS_PASSWORD') || undefined,
-          db: config.get<number>('REDIS_DB', 0),
-          connectTimeout: 5000,
-          // Required for BullMQ workers — do not change
-          maxRetriesPerRequest: null,
-          enableReadyCheck: false,
-        },
-        prefix: config.get<string>('QUEUE_PREFIX', 'maison-sent'),
-        defaultJobOptions: {
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: { age: 86400, count: 1000 },
-          removeOnFail: { age: 604800 },
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL');
+        let connection: Record<string, unknown>;
+
+        if (redisUrl) {
+          const url = new URL(redisUrl);
+          connection = {
+            host: url.hostname,
+            port: parseInt(url.port || '6379'),
+            password: url.password || undefined,
+            db: parseInt(url.pathname?.slice(1) || '0') || 0,
+            tls: redisUrl.startsWith('rediss://') ? {} : undefined,
+            connectTimeout: 5000,
+            maxRetriesPerRequest: null,
+            enableReadyCheck: false,
+          };
+        } else {
+          connection = {
+            host: config.getOrThrow<string>('REDIS_HOST'),
+            port: config.get<number>('REDIS_PORT', 6379),
+            password: config.get<string>('REDIS_PASSWORD') || undefined,
+            db: config.get<number>('REDIS_DB', 0),
+            connectTimeout: 5000,
+            maxRetriesPerRequest: null,
+            enableReadyCheck: false,
+          };
+        }
+
+        return {
+          connection,
+          prefix: config.get<string>('QUEUE_PREFIX', 'maison-sent'),
+          defaultJobOptions: {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 5000 },
+            removeOnComplete: { age: 86400, count: 1000 },
+            removeOnFail: { age: 604800 },
+          },
+        };
+      },
     }),
     BullModule.registerQueue({ name: 'notifications' }, { name: 'scheduled' }),
     UsersModule,
