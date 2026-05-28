@@ -12,8 +12,6 @@ services:
         fromDatabase:
           name: maison-sent-db
           property: connectionString
-      - key: REDIS_URL
-        sync: false
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
