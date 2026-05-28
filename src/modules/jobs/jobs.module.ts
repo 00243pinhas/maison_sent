@@ -28,7 +28,7 @@ import { ScheduledTasksService } from './services/scheduled-tasks.service';
     BullModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const redisUrl = config.get<string>('REDIS_URL');
+        const redisUrl = process.env.REDIS_URL || config.get<string>('REDIS_URL');
         let connection: Record<string, unknown>;
 
         if (redisUrl) {
