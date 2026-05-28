@@ -26,6 +26,9 @@
     "migration:run:prod": "NODE_ENV=production node -e \"const {AppDataSource}=require('./dist/database/data-source');AppDataSource.initialize().then(ds=>ds.runMigrations({transaction:'all'})).then(r=>{console.log('Migrations applied:',r.length);process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})\""
   },
   "dependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "typescript": "^5.7.3",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
@@ -53,8 +56,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@nestjs/cli": "^11.0.0",
-    "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
