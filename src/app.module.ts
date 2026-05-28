@@ -29,17 +29,27 @@ import { SeederModule } from './database/seeders/seeder.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const databaseUrl = config.get<string>('DATABASE_URL');
+        if (databaseUrl) {
+          const u = new URL(databaseUrl);
+          return {
+            type: 'postgres' as const,
+            host: u.hostname,
+            port: Number(u.port || 5432),
+            username: decodeURIComponent(u.username),
+            password: decodeURIComponent(u.password),
+            database: u.pathname.replace(/^\//, ''),
+            ssl: { rejectUnauthorized: false },
+            autoLoadEntities: true,
+            synchronize: false,
+          };
+        }
         return {
-          type: 'postgres',
-          ...(databaseUrl
-            ? { url: databaseUrl, ssl: true, extra: { ssl: { rejectUnauthorized: false } } }
-            : {
-                host: config.getOrThrow<string>('DATABASE_HOST'),
-                port: config.getOrThrow<number>('DATABASE_PORT'),
-                username: config.getOrThrow<string>('DATABASE_USER'),
-                password: config.getOrThrow<string>('DATABASE_PASSWORD'),
-                database: config.getOrThrow<string>('DATABASE_NAME'),
-              }),
+          type: 'postgres' as const,
+          host: config.getOrThrow<string>('DATABASE_HOST'),
+          port: config.getOrThrow<number>('DATABASE_PORT'),
+          username: config.getOrThrow<string>('DATABASE_USER'),
+          password: config.getOrThrow<string>('DATABASE_PASSWORD'),
+          database: config.getOrThrow<string>('DATABASE_NAME'),
           autoLoadEntities: true,
           synchronize: false,
         };
