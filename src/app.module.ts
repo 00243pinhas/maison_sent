@@ -57,7 +57,7 @@ import { SeederModule } from './database/seeders/seeder.module';
     TransfersModule,
     ReportsModule,
     NotificationsModule,
-    JobsModule,
+    ...(process.env.REDIS_URL || process.env.REDIS_HOST ? [JobsModule] : []),
     SeederModule,
   ],
 })
