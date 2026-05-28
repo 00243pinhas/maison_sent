@@ -11,7 +11,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: maison-sent-db
-          property: connectionString
+          property: connectionStringExternal
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
