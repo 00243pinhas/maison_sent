@@ -1,0 +1,11 @@
+# HTTP — works immediately with just an IP address
+:80 {
+    reverse_proxy backend:3000
+}
+
+# HTTPS — uncomment when you have a domain pointed at this server.
+# Caddy handles SSL/Let's Encrypt automatically; no extra config needed.
+#
+# your-domain.com {
+#     reverse_proxy backend:3000
+# }

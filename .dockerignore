@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+frontend
+backend
+.env*
+*.md
+coverage
+test
